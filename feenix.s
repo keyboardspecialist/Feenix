@@ -5,7 +5,7 @@
 ;	header defines
 	PRG_COUNT = 1 
 	CHR_COUNT = 1
-	MIRRORING = 0001b	;horz
+	MIRRORING = 0000b	;vert
 
 	db "NES", 1Ah		;NES header, standard NROM
 	db PRG_COUNT		;16KB PRG ROM
@@ -132,12 +132,12 @@ vblankwait2:
 	lda #$01	;init our sound lib, non-zero for NTSC
 	jsr FamiToneInit
 	
-	lda #%00010000	;load from table 1, no NMI yet
-	sta PPUCTRL
+
 	lda #STATE_MAIN_MENU
 	sta game_state
 	jsr init_main_menu
-	
+	;lda #%00010000	;load from table 1, no NMI yet
+	;sta PPUCTRL
 	lda #%10010000 ;enable NMI, sprites from pattern table 0, bg from table 1
 	sta PPUCTRL
 	
@@ -150,18 +150,18 @@ vblankwait2:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 _mainCPUThread:
 	lda vram_update_ready
-	bne _mainCPUThread		;wait while PPU renders
+	bne _mainCPUThread		;wait for NMI to finish
 
 	jsr FamiToneUpdate
 	jsr read_controller
 	
 	lda game_state
 	cmp #STATE_MAIN_MENU
-	beq main_menu
+	beq jmain_menu
 	
 	lda game_state
 	cmp #STATE_INIT_LEVEL
-	beq init_level_1
+	beq jinit_level_1
 
 	lda game_state
 	cmp #STATE_PLAYING
@@ -176,6 +176,10 @@ _end_state_update:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
 	
 ; springboard jump table
+jmain_menu:
+	jmp main_menu
+jinit_level_1:
+	jmp init_level_1
 jgameplay_loop:
 	jmp gameplay_loop
 
@@ -205,10 +209,10 @@ init_level_1:
 	sta PPUMASK
 	
 	load_palette level_1_palette
-	load_nametable level_1_table, #$01
-	load_attribute level_1_attr, #$01
 	load_nametable level_1_table, #$00
 	load_attribute level_1_attr, #$00	
+	load_nametable level_1_table, #$02
+	load_attribute level_1_attr, #$02
 	load_sprite_4	p1_ship, $0200
 	
 	lda #$80
@@ -262,7 +266,9 @@ NTSwapCheck:
 	bne NTSwapCheckDone
 NTSwap:
 	lda nametable	;load current nametable
+	lsr
 	eor #$01		;excl or of bit 0 will flip bit
+	asl
 	sta nametable	;0->1, 1->0
 	inc scroll_pages
 NTSwapCheckDone:
@@ -311,7 +317,7 @@ nmi_idle:
 	ora nametable	;select correct nametable for bit 0
 	sta PPUCTRL
 	
-	lda #%00011010	;enable sprites, bg, no clipping on left side
+	lda #%00011110	;enable sprites, bg, no clipping on left side
 	sta PPUMASK
 	
 	pull_regs
@@ -329,7 +335,7 @@ nmi_idle:
 ;;;;;;;;	DATA 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 main_menu_palette:
-	db $0F,$11,$21,$3C,  $0F,$30,$30,$30,  $0F,$16,$07,$28,  $0F,$16,$07,$28   ;background palette
+	db $0F,$11,$21,$3C,  $0F,$30,$30,$30,  $0F,$16,$07,$28,  $0F,$1A,$2A,$3B  ;background palette
 	db $0F,$11,$21,$3C,  $0F,$11,$21,$3C,  $0F,$10,$20,$11,  $0F,$10,$20,$11   ;sprite palette
 
 level_1_palette:

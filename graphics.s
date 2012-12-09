@@ -53,7 +53,7 @@ macro load_attribute _atr_data_ptr, _nt
 	
 	lda row_num
 	sec
-	sbc #$04	;repeat for first nametable
+	sbc #$04	
 	sta row_num
 	bcs -a
 endm
@@ -134,6 +134,7 @@ DrawNewAttributes:
 	adc atr_data_lo
 	sta source_lo
 	lda source_hi
+	clc
 	adc atr_data_hi
 	sta source_hi
 	
@@ -141,11 +142,11 @@ DrawNewAttributes:
 	lda PPUSTATUS		;reset latch 
 DrawNewAttributesLoop:
 	lda row_hi
-	sta PPUADDR			;write the hi byte of col addr
+	sta PPUADDR			;write the hi byte of row addr
 	lda row_lo	
 	sta PPUADDR			;write lo byte
-	lda (source_lo), y	; pointer, word addr of sourceLo and sourceHi
-	sta PPUDATA
+	lda (source_lo), y	
+	sta PPUDATA			;write attribute byte
 	
 	iny
 	cpy #$08
