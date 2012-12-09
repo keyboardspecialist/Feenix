@@ -29,105 +29,105 @@ macro mul_32_16bit m, l
 	lda #$00
 	sta m
 	lda l
-	asl a
+	asl 
 	rol m
-	asl a
+	asl 
 	rol m
-	asl a
+	asl 
 	rol m
-	asl a
+	asl 
 	rol m
-	asl a
+	asl 
 	rol m
 endm
 
 macro asl_2
-	asl a
-	asl a
+	asl 
+	asl 
 endm
 
 macro asl_3
-	asl a
-	asl a
-	asl a
+	asl 
+	asl 
+	asl 
 endm
 
 macro asl_4
-	asl a
-	asl a
-	asl a
-	asl a
+	asl 
+	asl 
+	asl 
+	asl 
 endm
 
 macro asl_5
-	asl a
-	asl a
-	asl a
-	asl a
-	asl a
+	asl 
+	asl 
+	asl 
+	asl 
+	asl 
 endm
 
 macro asl_6
-	asl a 
-	asl a
-	asl a
-	asl a
-	asl a
-	asl a
+	asl
+	asl
+	asl
+	asl
+	asl
+	asl
 endm
 
 macro asl_7
-	asl a 
-	asl a
-	asl a
-	asl a
-	asl a
-	asl a
-	asl a
+	asl
+	asl
+	asl
+	asl
+	asl
+	asl
+	asl
 endm
 
 
 macro lsr_2
-	lsr a
-	lsr a
+	lsr
+	lsr
 endm
 
 macro lsr_3
-	lsr a
-	lsr a
-	lsr a
+	lsr
+	lsr
+	lsr
 endm
 
 macro lsr_4
-	lsr a
-	lsr a
-	lsr a
-	lsr a
+	lsr
+	lsr
+	lsr
+	lsr
 endm
 
 macro lsr_5
-	lsr a
-	lsr a
-	lsr a
-	lsr a
-	lsr a
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
 endm
 
 macro lsr_6
-	lsr a
-	lsr a
-	lsr a
-	lsr a
-	lsr a
-	lsr a
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
 endm
 
 macro lsr_7
-	lsr a
-	lsr a
-	lsr a
-	lsr a
-	lsr a
-	lsr a
-	lsr a
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
 endm
