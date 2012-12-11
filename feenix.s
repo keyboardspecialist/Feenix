@@ -5,7 +5,7 @@
 ;	header defines
 	PRG_COUNT = 1 
 	CHR_COUNT = 1
-	MIRRORING = 0000b	;vert
+	MIRRORING = 0000b	;horz
 
 	db "NES", 1Ah		;NES header, standard NROM
 	db PRG_COUNT		;16KB PRG ROM
@@ -47,8 +47,8 @@ endm
 	nametable		dsb 1	;current nametable
 	nt_data_lo		dsb 1	;lo byte nametable data
 	nt_data_hi		dsb 1	;hi byte nt data
-	atr_data_lo		dsb 1
-	atr_data_hi		dsb 1
+	atr_data_lo		dsb 1	;lo byte attribute data
+	atr_data_hi		dsb 1	;hi byte attribute data
 	row_lo			dsb 1	;row lo address
 	row_hi			dsb 1	;row hi address
 	source_lo		dsb 1	;data lo address
@@ -58,11 +58,11 @@ endm
 	p1_x			dsb 1	;player 1 X location
 	p1_y			dsb 1	;player 1 Y location
 	num_bullets		dsb 1	;number of fired bullets on screen
-	vram_update_ready	dsb 1	;notify nmi that its ready to draw
+	vram_update_ready	dsb 1	;notify nmi that data is ready for ppu write
 	game_state		dsb 1	;current state
 	ende
 
-	SCROLL_SPD = 01h
+	SCROLL_SPD = 02h
 	PLAYER_SPD = 02h
 	
 	;game states
@@ -132,12 +132,12 @@ vblankwait2:
 	lda #$01	;init our sound lib, non-zero for NTSC
 	jsr FamiToneInit
 	
-
+	lda #$EF
+	sta scroll
 	lda #STATE_MAIN_MENU
 	sta game_state
 	jsr init_main_menu
-	;lda #%00010000	;load from table 1, no NMI yet
-	;sta PPUCTRL
+
 	lda #%10010000 ;enable NMI, sprites from pattern table 0, bg from table 1
 	sta PPUCTRL
 	
@@ -185,8 +185,8 @@ jgameplay_loop:
 
 init_main_menu:
 	load_palette main_menu_palette
-	load_nametable menu_table, #$00
-	load_attribute menu_attr, #$00
+	load_nametable menu_table, #$02
+	load_attribute menu_attr, #$02
 	
 	ldx #<feenixmarch_module
 	ldy #>feenixmarch_module
@@ -211,8 +211,6 @@ init_level_1:
 	load_palette level_1_palette
 	load_nametable level_1_table, #$00
 	load_attribute level_1_attr, #$00	
-	load_nametable level_1_table, #$02
-	load_attribute level_1_attr, #$02
 	load_sprite_4	p1_ship, $0200
 	
 	lda #$80
@@ -220,7 +218,7 @@ init_level_1:
 	sta p1_y
 	lda #$01
 	sta scroll_flag
-	lda #$1F
+	lda #$1D
 	sta row_num
 	lda #$EF
 	sta scroll
@@ -252,30 +250,25 @@ NMI:
 	beq nmi_idle
 	lda scroll_flag
 	beq nmi_idle
-	lda scroll	
+	lda scroll
 	sec
 	sbc #SCROLL_SPD
-	sta scroll
-	bne NTSwapCheck
-	lda #$EF
-	sta scroll
-
-NTSwapCheck:
-	lda scroll
 	cmp #$EF
-	bne NTSwapCheckDone
+	bcs +
+	sta scroll
+	bne NTSwapDone
++	lda #$EF
+	sta scroll
 NTSwap:
 	lda nametable	;load current nametable
-	lsr
-	eor #$01		;excl or of bit 0 will flip bit
-	asl
-	sta nametable	;0->1, 1->0
+	eor #%00000010
+	sta nametable	;0->2, 2->0
 	inc scroll_pages
-NTSwapCheckDone:
+NTSwapDone:
 
 NewAttrCheck:
 	lda scroll
-	and #%00011111	;32
+	and #%00011111	
 	bne NewAttrCheckDone
 	jsr DrawNewAttributes
 NewAttrCheckDone:
@@ -288,8 +281,8 @@ NewRowCheck:
 	jsr DrawNewRow
 	
 	dec row_num
-	bpl NewRowCheckDone
-	lda #$1E
+	bpl NewRowCheckDone		;loop from 30->0
+	lda #$1D
 	sta row_num
 NewRowCheckDone:
 
@@ -312,9 +305,8 @@ nmi_idle:
 	lda scroll
 	sta PPUSCROLL	;vert scroll
 	
-
 	lda #%10010000
-	ora nametable	;select correct nametable for bit 0
+	ora nametable	;select correct nametable
 	sta PPUCTRL
 	
 	lda #%00011110	;enable sprites, bg, no clipping on left side
@@ -339,7 +331,7 @@ main_menu_palette:
 	db $0F,$11,$21,$3C,  $0F,$11,$21,$3C,  $0F,$10,$20,$11,  $0F,$10,$20,$11   ;sprite palette
 
 level_1_palette:
-	db $0F,$16,$07,$27,  $0F,$01,$21,$31,  $0F,$16,$07,$28,  $0F,$16,$07,$28   ;background palette
+	db $0F,$16,$07,$27,  $0F,$01,$21,$31,  $0F,$11,$21,$3C,  $0F,$1A,$2A,$3B  ;background palette
 	db $0F,$10,$20,$11,  $0F,$01,$21,$2A,  $0F,$10,$20,$11,  $0F,$10,$20,$11   ;sprite palette
 
 p1_ship:
@@ -359,7 +351,6 @@ menu_table:
 	incbin "feenix\feenix_title.nam"
 level_1_table:
 	incbin "feenix\feenix.nam"
-
 
 menu_attr:
 	incbin "feenix\feenix_title.atr"

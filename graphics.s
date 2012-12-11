@@ -47,41 +47,47 @@ macro load_attribute _atr_data_ptr, _nt
 	
 	lda #_nt
 	sta nametable
-	lda #$1F
+	lda #$00
 	sta row_num
 -a	jsr DrawNewAttributes	;draw attributes
 	
 	lda row_num
-	sec
-	sbc #$04	
+	clc
+	adc #$04	
 	sta row_num
-	bcs -a
+	cmp #$20
+	bne -a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;	GRAPHICS ROUTINES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 DrawNewRow:
-	mul_32_16bit row_hi, row_num	;mul row_num by 32 and store in row_hi/lo
-	sta row_lo
+	lda row_num
+	mul_32_16bit row_hi	;mul row_num by 32 and store in row_hi/A
+	sec
+	sbc #$20
+	sta row_lo			;store row_lo-1 to get first offscreen row
 	
 	
-	lda nametable	;calc new col addr using current nametable
-	;eor #$01		;invert lo bit
+	lda nametable	;calc new row addr using current nametable
+	eor #%00000010		;invert nt
 	asl_2			;shift up, A = $00 or $02		;$00 or $04
 	clc 
 	adc #$20		;add hi byte of nametable addr ($2000)
 	adc row_hi
-	sta row_hi		;new addr = $20 or $24 
+	sta row_hi		;new addr = $20 or $28 
 	
 	lda row_num		;row number * 32 = row data offset
 	asl_5
+	sec
+	sbc #$20
 	sta source_lo
 	lda row_num
 	lsr_3
 	sta source_hi
 	
-	lda source_lo	;row data start + offs = addr to load col data from
+	lda source_lo	;row data start + offs = addr to load row data from
 	clc
 	adc nt_data_lo
 	sta source_lo
@@ -109,23 +115,20 @@ DrawRowLoop:
 	
 DrawNewAttributes:
 	lda nametable
-	;eor #$01		;invert lo bit
-	asl_2			;shift, $00 or $04
+	eor #%00000010		;invert nt bit
+	asl_2			;shift, $00 or $08
 	clc 
 	adc #$23		;add hi byte of attribute base addr $23C0
-	sta row_hi		;new addr = $23 or $27 
+	sta row_hi		;new addr = $23 or $2B 
 	
 	lda row_num
 	asl				;row * 2
 	and #$F8		;mask 3 low bits for 8 byte boundary
+	sta source_lo
 	clc
 	adc #$C0		;lo addr byte
 	sta row_lo		
 	
-	lda row_num
-	asl
-	and #$F8
-	sta source_lo
 	lda #$00
 	sta source_hi 
 	
@@ -140,14 +143,13 @@ DrawNewAttributes:
 	
 	ldy #$00
 	lda PPUSTATUS		;reset latch 
-DrawNewAttributesLoop:
 	lda row_hi
 	sta PPUADDR			;write the hi byte of row addr
 	lda row_lo	
 	sta PPUADDR			;write lo byte
+DrawNewAttributesLoop:
 	lda (source_lo), y	
 	sta PPUDATA			;write attribute byte
-	
 	iny
 	cpy #$08
 	beq DrawNewAttributesLoopDone

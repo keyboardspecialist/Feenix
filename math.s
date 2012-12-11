@@ -25,10 +25,11 @@ macro div_8bit n, d
 endm
 
 ;not the fastest, consider lookup table
-macro mul_32_16bit m, l
+macro mul_32_16bit m
+	pha
 	lda #$00
 	sta m
-	lda l
+	pla
 	asl 
 	rol m
 	asl 
