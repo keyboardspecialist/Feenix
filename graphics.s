@@ -32,7 +32,7 @@ macro load_nametable _nt_data_ptr, _nt
 	
 	lda #_nt
 	sta nametable
-	lda #$1E
+	lda #$1D
 	sta row_num
 -	jsr DrawNewRow	;draw bg column
 	dec row_num
@@ -65,13 +65,13 @@ endm
 DrawNewRow:
 	lda row_num
 	mul_32_16bit row_hi	;mul row_num by 32 and store in row_hi/A
-	sec
-	sbc #$20
+;	sec
+;	sbc #$20
 	sta row_lo			;store row_lo-1 to get first offscreen row
 	
 	
 	lda nametable	;calc new row addr using current nametable
-	eor #%00000010		;invert nt
+;	eor #%00000010		;invert nt
 	asl_2			;shift up, A = $00 or $02		;$00 or $04
 	clc 
 	adc #$20		;add hi byte of nametable addr ($2000)
@@ -80,8 +80,8 @@ DrawNewRow:
 	
 	lda row_num		;row number * 32 = row data offset
 	asl_5
-	sec
-	sbc #$20
+;	sec
+;	sbc #$20
 	sta source_lo
 	lda row_num
 	lsr_3
@@ -115,7 +115,7 @@ DrawRowLoop:
 	
 DrawNewAttributes:
 	lda nametable
-	eor #%00000010		;invert nt bit
+;	eor #%00000010		;invert nt bit
 	asl_2			;shift, $00 or $08
 	clc 
 	adc #$23		;add hi byte of attribute base addr $23C0
@@ -152,8 +152,7 @@ DrawNewAttributesLoop:
 	sta PPUDATA			;write attribute byte
 	iny
 	cpy #$08
-	beq DrawNewAttributesLoopDone
-	jmp DrawNewAttributesLoop
+	bne DrawNewAttributesLoop
 DrawNewAttributesLoopDone:
 
 	rts

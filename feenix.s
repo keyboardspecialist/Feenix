@@ -132,7 +132,7 @@ vblankwait2:
 	lda #$01	;init our sound lib, non-zero for NTSC
 	jsr FamiToneInit
 	
-	lda #$EF
+	lda #$00
 	sta scroll
 	lda #STATE_MAIN_MENU
 	sta game_state
@@ -185,8 +185,8 @@ jgameplay_loop:
 
 init_main_menu:
 	load_palette main_menu_palette
-	load_nametable menu_table, #$02
-	load_attribute menu_attr, #$02
+	load_nametable menu_table, #$00
+	load_attribute menu_attr, #$00
 	
 	ldx #<feenixmarch_module
 	ldy #>feenixmarch_module
@@ -209,8 +209,8 @@ init_level_1:
 	sta PPUMASK
 	
 	load_palette level_1_palette
-	load_nametable level_1_table, #$00
-	load_attribute level_1_attr, #$00	
+	load_nametable level_1_table, #$02
+	load_attribute level_1_attr, #$02		
 	load_sprite_4	p1_ship, $0200
 	
 	lda #$80
@@ -218,9 +218,9 @@ init_level_1:
 	sta p1_y
 	lda #$01
 	sta scroll_flag
-	lda #$1D
+	lda #$1E
 	sta row_num
-	lda #$EF
+	lda #$00
 	sta scroll
 	lda #STATE_PLAYING
 	sta game_state
@@ -268,7 +268,8 @@ NTSwapDone:
 
 NewAttrCheck:
 	lda scroll
-	and #%00011111	
+	eor #%00001111	;updates every 16 pixels instead of 32 but should be fine
+	and #%00001111
 	bne NewAttrCheckDone
 	jsr DrawNewAttributes
 NewAttrCheckDone:
@@ -276,13 +277,15 @@ NewAttrCheckDone:
 
 NewRowCheck:
 	lda scroll
+	eor #%00000111	;invert 3 low bits then and against them to see if its 7 or F
 	and #%00000111
 	bne NewRowCheckDone 
+	dec row_num
 	jsr DrawNewRow
 	
-	dec row_num
-	bpl NewRowCheckDone		;loop from 30->0
-	lda #$1D
+	lda row_num
+	bne NewRowCheckDone		;loop from 30->0
+	lda #$1E
 	sta row_num
 NewRowCheckDone:
 
